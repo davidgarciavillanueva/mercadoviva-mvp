@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 
-const API_URL = "http://localhost:8000";
+const API_URL = "[https://mercadoviva-backend.onrender.com](https://mercadoviva-backend.onrender.com)";
 
 function App() {
   const [vistaActual, setVistaActual] = useState('cliente'); // 'cliente' o 'admin'
