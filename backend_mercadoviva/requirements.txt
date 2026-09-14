@@ -4,3 +4,4 @@ supabase
 pydantic
 pyjwt
 python-multipart
+PyJWT
