@@ -63,29 +63,43 @@ def root():
 
 # HU1: Radicar PQR (Cliente)
 @app.post("/pqrs")
-def crear_pqr(pqr: PQRRequest):
-    # Verificamos si el cliente ya existe en el historial
-    cliente = supabase.table("clientes").select("*").eq("cedula", pqr.cedula).execute()
-    
-    if not cliente.data:
-        # Si no existe, lo creamos nuevo
-        supabase.table("clientes").insert({
-            "cedula": pqr.cedula,
-            "nombre": pqr.nombre,
-            "email": pqr.email,
-            "telefono": pqr.telefono
-        }).execute()
-        
-    # Guardamos la PQR (Ticket) asociada a su cédula
-    nueva_pqr = supabase.table("pqrs").insert({
-        "cedula_cliente": pqr.cedula,
-        "tipo": pqr.tipo,
-        "descripcion": pqr.descripcion,
-        "estado": "Abierto"
-    }).execute()
-    
-    return {"mensaje": "PQR radicada exitosamente", "ticket_id": nueva_pqr.data[0]["id"]}
+async def crear_pqr(
+    cedula: str = Form(...),
+    nombre: str = Form(...),
+    tipo: str = Form(...),
+    descripcion: str = Form(...),
+    evidencia: UploadFile = File(None)
+):
+    url_archivo = None
 
+    if evidencia:
+        try:
+            file_extension = evidencia.filename.split(".")[-1]
+            file_name = f"{uuid.uuid4()}.{file_extension}"
+            file_bytes = await evidencia.read()
+
+            supabase.storage.from_("evidencias_pqrs").upload(
+                path=file_name,
+                file=file_bytes,
+                file_options={"content-type": evidencia.content_type}
+            )
+            url_archivo = supabase.storage.from_("evidencias_pqrs").get_public_url(file_name)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail="Error al subir evidencia")
+
+    try:
+        nueva_pqr = {
+            "cedula": cedula,
+            "nombre": nombre,
+            "tipo": tipo,
+            "descripcion": descripcion,
+            "estado": "Abierto",
+            "url_evidencia": url_archivo
+        }
+        respuesta = supabase.table("pqrs").insert(nueva_pqr).execute()
+        return {"mensaje": "PQR radicada con éxito", "data": respuesta.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 # HU2: Consultar estado (Cliente)
 @app.get("/pqrs/cliente/{cedula}")
 def consultar_estado(cedula: str):
