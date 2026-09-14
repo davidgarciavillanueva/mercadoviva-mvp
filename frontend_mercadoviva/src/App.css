@@ -1,162 +1,119 @@
-* {
-  box-sizing: border-box;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
+/* 1. Fondo general más suave (no blanco puro) */
 body {
   background-color: #f4f7f6;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   margin: 0;
-  padding: 0;
-}
-
-.contenedor-principal {
-  max-width: 900px;
-  margin: 0 auto;
   padding: 20px;
-}
-
-.cabecera {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  background-color: #1a56db;
-  color: white;
-  padding: 15px 30px;
-  border-radius: 8px;
-  margin-bottom: 20px;
+  min-height: 100vh;
 }
 
-.cabecera h1 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.botones-navegacion button {
-  background: transparent;
-  color: white;
-  border: 1px solid white;
-  padding: 8px 15px;
-  margin-left: 10px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.botones-navegacion button.activo {
-  background: white;
-  color: #1a56db;
-  font-weight: bold;
-}
-
-.seccion {
-  background: white;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-}
-
-.pestañas {
-  display: flex;
-  margin-bottom: 20px;
-  border-bottom: 2px solid #eee;
-}
-
-.pestañas button {
-  background: none;
-  border: none;
-  padding: 10px 20px;
-  font-size: 1rem;
-  cursor: pointer;
-  color: #666;
-}
-
-.pestañas button.activo {
-  color: #1a56db;
-  border-bottom: 2px solid #1a56db;
-  font-weight: bold;
-}
-
-.formulario {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  max-width: 500px;
+/* Contenedor principal para centrar el contenido */
+.app-container {
+  max-width: 800px;
+  width: 100%;
   margin: 0 auto;
 }
 
-.formulario input, .formulario select, .formulario textarea {
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 1rem;
+/* 2. Tarjetas y Formularios con efecto "Elevado" (Sombras suaves) */
+.tarjeta, form {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid #eaeaea;
+  margin-bottom: 20px;
 }
 
-.btn-primario {
-  background-color: #10b981;
+.tarjeta:hover, form:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+}
+
+/* 3. Botones modernos con degradado y efecto Hover */
+button {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: none;
-  padding: 12px;
-  border-radius: 5px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-}
-.btn-primario:hover { background-color: #059669; }
-
-.btn-secundario {
-  background-color: #ef4444;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.tarjeta-pqr, .tarjeta-admin {
-  border: 1px solid #e5e7eb;
-  padding: 15px;
   border-radius: 8px;
-  margin-bottom: 15px;
-  border-left: 5px solid #1a56db;
+  padding: 12px 24px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+  width: 100%;
+  margin-top: 15px;
 }
 
-.tarjeta-pqr.resuelto, .tarjeta-admin.resuelto {
-  border-left-color: #10b981;
-  background-color: #f0fdf4;
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.4);
+  filter: brightness(1.1);
 }
 
-.etiqueta-estado {
+/* 4. Cajas de texto (Inputs) más estéticas */
+input, select, textarea {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  margin-bottom: 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.3s;
+  background-color: #f8fafc;
+  box-sizing: border-box;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #10b981;
+  background-color: #ffffff;
+}
+
+/* Estilos para etiquetas y títulos */
+h1, h2, h3 {
+  color: #1e293b;
+  text-align: center;
+}
+
+label {
+  font-weight: 600;
+  color: #475569;
+  display: block;
+}
+
+/* Enlace de evidencia */
+.enlace-evidencia {
   display: inline-block;
-  background: #eee;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.85rem;
   margin-top: 10px;
+  color: #10b981;
+  text-decoration: none;
   font-weight: bold;
 }
 
-.info-cliente {
-  background: #f3f4f6;
-  padding: 10px;
-  border-radius: 5px;
-  margin-bottom: 10px;
-  font-size: 0.9rem;
+.enlace-evidencia:hover {
+  text-decoration: underline;
 }
 
-.info-ticket {
-  margin-bottom: 15px;
-}
-
-.acciones {
+/* Navegación básica */
+nav {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  margin-bottom: 20px;
 }
 
-.btn-resolver {
-  background-color: #10b981;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 5px;
-  cursor: pointer;
+nav button {
+  width: auto;
+  margin-top: 0;
 }
+
+
+
+
+
+
+
+
