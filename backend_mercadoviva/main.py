@@ -145,7 +145,7 @@ def ver_todas_pqrs():
 
 # HU5: Actualizar estado de PQR (Solo Agentes) 
 @app.put("/pqrs/{pqr_id}")
-def actualizar_estado_pqr(pqr_id: int, actualizacion: EstadoUpdate):
+def actualizar_estado_pqr(pqr_id: str, actualizacion: EstadoUpdate):
     try:
         resultado = supabase.table("pqrs").update({"estado": actualizacion.estado}).eq("id", pqr_id).execute()
         if not resultado.data:
