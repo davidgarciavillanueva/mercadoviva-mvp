@@ -54,7 +54,6 @@ button:hover {
   filter: brightness(1.1);
 }
 
-/* 4. Cajas de texto (Inputs) más estéticas */
 input, select, textarea {
   width: 100%;
   padding: 12px;
@@ -66,10 +65,18 @@ input, select, textarea {
   transition: border-color 0.3s;
   background-color: #f8fafc;
   box-sizing: border-box;
+  color: #1e293b; /* ESTA ES LA MAGIA: Fuerza el texto a color oscuro */
+  font-size: 16px; /* Letra un poco más grande y legible */
 }
 
 input:focus, select:focus, textarea:focus {
   border-color: #10b981;
+  background-color: #ffffff;
+}
+
+/* Para que las opciones del menú desplegable también se vean oscuras */
+option {
+  color: #1e293b;
   background-color: #ffffff;
 }
 
