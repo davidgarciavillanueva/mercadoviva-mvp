@@ -10,16 +10,18 @@ function App() {
   // Estados del Formulario (Cliente)
   const [cedula, setCedula] = useState("");
   const [nombre, setNombre] = useState("");
+  const [emailCliente, setEmailCliente] = useState(""); // Correo del cliente
+  const [telefono, setTelefono] = useState("");         // Teléfono del cliente
   const [tipo, setTipo] = useState("Queja");
   const [descripcion, setDescripcion] = useState("");
-  const [archivo, setArchivo] = useState(null); // Estado para la foto/pdf
+  const [archivo, setArchivo] = useState(null); 
 
   // Estados de Consulta (Cliente)
   const [cedulaConsulta, setCedulaConsulta] = useState("");
   const [misPqrs, setMisPqrs] = useState([]);
 
   // Estados del Agente
-  const [email, setEmail] = useState("");
+  const [emailAdmin, setEmailAdmin] = useState("");
   const [password, setPassword] = useState("");
   const [logueado, setLogueado] = useState(false);
   const [todasPqrs, setTodasPqrs] = useState([]);
@@ -30,14 +32,15 @@ function App() {
   const enviarPQR = async (e) => {
     e.preventDefault();
     
-    // Usamos FormData en lugar de JSON para poder enviar el archivo adjunto
+    // Usamos FormData para empaquetar textos y archivos juntos
     const formData = new FormData();
     formData.append("cedula", cedula);
     formData.append("nombre", nombre);
+    formData.append("email", emailCliente);
+    formData.append("telefono", telefono);
     formData.append("tipo", tipo);
     formData.append("descripcion", descripcion);
     
-    // Si el usuario subió una foto, la agregamos al paquete
     if (archivo) {
       formData.append("evidencia", archivo);
     }
@@ -45,15 +48,16 @@ function App() {
     try {
       const response = await fetch(API_URL + "/pqrs", {
         method: "POST",
-        // NO ponemos Content-Type. FormData se encarga de esto automáticamente.
         body: formData, 
       });
 
       if (response.ok) {
         alert("¡PQR radicada con éxito!");
-        // Limpiar formulario para el siguiente usuario
+        // Limpiar el formulario completo
         setCedula("");
         setNombre("");
+        setEmailCliente("");
+        setTelefono("");
         setDescripcion("");
         setArchivo(null);
         document.getElementById("archivo-input").value = ""; 
@@ -90,8 +94,7 @@ function App() {
   // ==========================================
   const loginAgente = async (e) => {
     e.preventDefault();
-    // Credenciales del requerimiento
-    if (email === "agente@mercadoviva.com" && password === "admin123") {
+    if (emailAdmin === "agente@mercadoviva.com" && password === "admin123") {
       setLogueado(true);
       cargarTodasLasPqrs();
     } else {
@@ -113,7 +116,6 @@ function App() {
 
   const marcarResuelto = async (id) => {
     try {
-      // Actualizamos el estado de la PQR a 'Resuelto'
       const response = await fetch(API_URL + "/pqrs/" + id, {
         method: "PUT",
         headers: {
@@ -124,7 +126,7 @@ function App() {
 
       if (response.ok) {
         alert("El estado del ticket se ha actualizado a Resuelto.");
-        cargarTodasLasPqrs(); // Refresca el panel
+        cargarTodasLasPqrs(); 
       }
     } catch (error) {
       alert("Error al actualizar el estado");
@@ -156,6 +158,12 @@ function App() {
           <label>Nombre Completo:</label>
           <input type="text" required value={nombre} onChange={(e) => setNombre(e.target.value)} />
 
+          <label>Correo Electrónico:</label>
+          <input type="email" required value={emailCliente} onChange={(e) => setEmailCliente(e.target.value)} />
+
+          <label>Teléfono:</label>
+          <input type="text" required value={telefono} onChange={(e) => setTelefono(e.target.value)} />
+
           <label>Tipo de Solicitud:</label>
           <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
             <option value="Petición">Petición</option>
@@ -166,7 +174,6 @@ function App() {
           <label>Descripción detallada:</label>
           <textarea required rows="4" value={descripcion} onChange={(e) => setDescripcion(e.target.value)}></textarea>
 
-          {/* INPUT PARA SUBIR LA FOTO/EVIDENCIA */}
           <label>Adjuntar Evidencia (Foto o PDF opcional):</label>
           <input 
             id="archivo-input"
@@ -209,7 +216,7 @@ function App() {
         <form onSubmit={loginAgente} className="tarjeta">
           <h2>Acceso Administrativo Seguro</h2>
           <label>Correo Electrónico:</label>
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input type="email" required value={emailAdmin} onChange={(e) => setEmailAdmin(e.target.value)} />
           
           <label>Contraseña:</label>
           <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
@@ -230,7 +237,6 @@ function App() {
               <p><strong>Estado actual:</strong> {pqr.estado}</p>
               <p><strong>Descripción:</strong> {pqr.descripcion}</p>
               
-              {/* ENLACE PARA QUE EL AGENTE VEA LA FOTO */}
               {pqr.url_evidencia && (
                 <p>
                   <a href={pqr.url_evidencia} target="_blank" rel="noopener noreferrer" className="enlace-evidencia">
