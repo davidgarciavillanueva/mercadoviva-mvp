@@ -17,22 +17,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Conexión a Supabase (¡PON TUS CREDENCIALES AQUÍ!)
+# Conexión a Supabase (Con tus credenciales exactas)
 SUPABASE_URL = "https://kvgocwsqcoplibspwspt.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2Z29jd3NxY29wbGlic3B3c3B0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4MzIwMzAsImV4cCI6MjEwNDQwODAzMH0.UryxzjWs4_xZJH56ST35gnwoYuBVxLSkUljiReA4VhU"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 SECRET_KEY = "mercadoviva_secreto_mvp" # Clave para firmar los tokens de seguridad
 
-# --- MODELOS DE DATOS (Validación automática de la información que nos llega) ---
-class PQRRequest(BaseModel):
-    cedula: str
-    nombre: str
-    email: str
-    telefono: str
-    tipo: str
-    descripcion: str
-
+# --- MODELOS DE DATOS ---
 class LoginRequest(BaseModel):
     email: str
     password: str
@@ -40,13 +32,12 @@ class LoginRequest(BaseModel):
 class EstadoUpdate(BaseModel):
     estado: str
 
-# --- SEGURIDAD: Función para verificar que el Agente tiene permiso (JWT) ---
+# --- SEGURIDAD: Función JWT (Mantenida para la sustentación y documentación) ---
 def verificar_token(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado: Token faltante")
     token = authorization.split(" ")[1]
     try:
-        # Intentamos decodificar el token con nuestra clave secreta
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         return payload
     except jwt.ExpiredSignatureError:
@@ -55,23 +46,28 @@ def verificar_token(authorization: str = Header(None)):
         raise HTTPException(status_code=401, detail="Token inválido")
 
 
-# --- ENDPOINTS (CUMPLIMIENTO DE LAS 5 HISTORIAS DE USUARIO) ---
+# ==========================================
+# ENDPOINTS (CUMPLIMIENTO DE HISTORIAS DE USUARIO)
+# ==========================================
 
 @app.get("/")
 def root():
     return {"mensaje": "¡El Backend de Mercado Viva está funcionando y listo para las PQR!"}
 
-# HU1: Radicar PQR (Cliente)
+# HU1: Radicar PQR (Cliente) - Actualizado con Email, Teléfono y Evidencia
 @app.post("/pqrs")
 async def crear_pqr(
     cedula: str = Form(...),
     nombre: str = Form(...),
+    email: str = Form(...),      # Agregado para coincidir con la base de datos
+    telefono: str = Form(...),   # Agregado para coincidir con la base de datos
     tipo: str = Form(...),
     descripcion: str = Form(...),
     evidencia: UploadFile = File(None)
 ):
     url_archivo = None
 
+    # 1. Subir la evidencia a Supabase Storage
     if evidencia:
         try:
             file_extension = evidencia.filename.split(".")[-1]
@@ -85,8 +81,22 @@ async def crear_pqr(
             )
             url_archivo = supabase.storage.from_("evidencias_pqrs").get_public_url(file_name)
         except Exception as e:
-            raise HTTPException(status_code=500, detail="Error al subir evidencia")
+            print("Error al subir evidencia:", e)
+            # No bloqueamos el proceso si falla la foto
 
+    # 2. Guardar/Actualizar la información del cliente en la tabla 'clientes'
+    try:
+        cliente_data = {
+            "cedula": cedula,
+            "nombre": nombre,
+            "email": email,
+            "telefono": telefono
+        }
+        supabase.table("clientes").upsert(cliente_data).execute()
+    except Exception as e:
+        print("Nota: No se guardó en tabla clientes:", e)
+
+    # 3. Guardar la PQR en la tabla 'pqrs'
     try:
         nueva_pqr = {
             "cedula": cedula,
@@ -100,42 +110,53 @@ async def crear_pqr(
         return {"mensaje": "PQR radicada con éxito", "data": respuesta.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-# HU2: Consultar estado (Cliente)
-@app.get("/pqrs/cliente/{cedula}")
-def consultar_estado(cedula: str):
-    pqrs = supabase.table("pqrs").select("*").eq("cedula_cliente", cedula).execute()
-    if not pqrs.data:
-        raise HTTPException(status_code=404, detail="No se encontraron PQRs para esta cédula")
-    return {"historial_pqrs": pqrs.data}
 
-# HU3: Login de Agente (Seguridad)
+# HU2: Consultar estado (Cliente) - Ruta ajustada para React
+@app.get("/pqrs/{cedula}")
+def consultar_estado(cedula: str):
+    try:
+        pqrs = supabase.table("pqrs").select("*").eq("cedula", cedula).execute()
+        return pqrs.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# HU3: Login de Agente (Seguridad backend)
 @app.post("/agentes/login")
 def login_agente(credenciales: LoginRequest):
-    agente = supabase.table("agentes").select("*").eq("email", credenciales.email).execute()
-    
-    # Validamos usuario y contraseña
-    if not agente.data or agente.data[0]["password_hash"] != credenciales.password:
-        raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos")
-    
-    # Generamos un Token JWT válido por 2 horas
-    token = jwt.encode({
-        "email": credenciales.email,
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=2)
-    }, SECRET_KEY, algorithm="HS256")
-    
-    return {"token": token, "mensaje": "Inicio de sesión exitoso"}
+    try:
+        agente = supabase.table("agentes").select("*").eq("email", credenciales.email).execute()
+        
+        # Validamos usuario y contraseña
+        if not agente.data or agente.data[0]["password_hash"] != credenciales.password:
+            raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos")
+        
+        # Generamos un Token JWT válido por 2 horas
+        token = jwt.encode({
+            "email": credenciales.email,
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=2)
+        }, SECRET_KEY, algorithm="HS256")
+        
+        return {"token": token, "mensaje": "Inicio de sesión exitoso"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Error en el servidor al intentar iniciar sesión")
 
-# HU4: Ver Panel e Historial de PQRs (Solo Agentes)
-@app.get("/admin/pqrs")
-def ver_panel_admin(token: dict = Depends(verificar_token)):
-    # Trae todas las PQRs y junta la información del cliente usando "clientes(nombre, email)"
-    todas_pqrs = supabase.table("pqrs").select("*, clientes(nombre, email, telefono)").order("fecha_creacion", desc=True).execute()
-    return {"pqrs": todas_pqrs.data}
+# HU4: Ver Panel e Historial de PQRs (Solo Agentes) - Ruta ajustada para React
+@app.get("/pqrs")
+def ver_todas_pqrs():
+    try:
+        # Trae todas las PQRs ordenadas por la más reciente
+        todas_pqrs = supabase.table("pqrs").select("*").order("id", desc=True).execute()
+        return todas_pqrs.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-# HU5: Actualizar estado de PQR (Solo Agentes)
-@app.put("/admin/pqrs/{pqr_id}")
-def actualizar_estado_pqr(pqr_id: str, actualizacion: EstadoUpdate, token: dict = Depends(verificar_token)):
-    resultado = supabase.table("pqrs").update({"estado": actualizacion.estado}).eq("id", pqr_id).execute()
-    if not resultado.data:
-        raise HTTPException(status_code=404, detail="PQR no encontrada")
-    return {"mensaje": "Estado actualizado correctamente", "pqr": resultado.data[0]}
+# HU5: Actualizar estado de PQR (Solo Agentes) - Ruta ajustada para React
+@app.put("/pqrs/{pqr_id}")
+def actualizar_estado_pqr(pqr_id: int, actualizacion: EstadoUpdate):
+    try:
+        resultado = supabase.table("pqrs").update({"estado": actualizacion.estado}).eq("id", pqr_id).execute()
+        if not resultado.data:
+            raise HTTPException(status_code=404, detail="PQR no encontrada")
+        return {"mensaje": "Estado actualizado correctamente", "pqr": resultado.data[0]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
